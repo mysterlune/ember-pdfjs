@@ -1,7 +1,8 @@
 'use strict';
 
 module.exports = function(environment, appConfig) {
-    return {
-        workerSrc: '/pdf.worker.js'
-    };
+    if(!appConfig['PDFJS']) {
+        appConfig['PDFJS'] = {}
+    }
+    appConfig['PDFJS'].workerSrc = '/pdf.worker.js';
 };
