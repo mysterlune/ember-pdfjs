@@ -1,6 +1,6 @@
 {
   "name": "ember-pdfjs",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "directories": {
     "doc": "doc",
     "test": "tests"
@@ -10,15 +10,14 @@
     "build": "ember build",
     "test": "ember test"
   },
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mysterlune/ember-pdfjs.git"
+  },
   "engines": {
     "node": ">= 0.10.0"
   },
   "author": "River Lune <mysterlune@gmail.com> (http://www.plainearth.com/)",
-    "repository": {
-    "type": "git",
-    "url": "https://github.com/mysterlune/ember-pdfjs.git"
-  },
   "license": "MIT",
   "devDependencies": {
     "body-parser": "^1.2.0",
