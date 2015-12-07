@@ -1,26 +1,35 @@
-# Ember-pdfjs
+# Ember PDFJS Addon
 
-This README outlines the details of collaborating on this Ember addon.
+This addon will add [PDFJS](https://mozilla.github.io/pdf.js/) to your `ember-cli` project.
 
 ## Installation
 
-* `git clone` this repository
-* `npm install`
-* `bower install`
+Within your `ember-cli` project:
 
-## Running
+* `ember install ember-pdfjs`
 
-* `ember server`
-* Visit your app at http://localhost:4200.
+This will add a `pdf-page` component to your application
+
+## Usage
+
+In a template, just do:
+
+````
+{{pdf-page src=[the location]}}
+````
+
+At the time of this writing, the first page of the PDF will render, with the text layer dumbly created and tacked on after the `canvas` element.
+
+## Caveats
+This project is nascent, and needs your help! ;)
+
+The goals of this project are spelled out in [Issues](https://github.com/mysterlune/ember-pdfjs/issues/2). If there are recommendations that you need for own project, likely they will benefit others.
+
+Please contribute!
 
 ## Running Tests
 
-* `npm test` (Runs `ember try:testall` to test your addon against multiple Ember versions)
 * `ember test`
-* `ember test --server`
 
-## Building
-
-* `ember build`
-
-For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
+## Contributing
+Fork and PR, please ;)
