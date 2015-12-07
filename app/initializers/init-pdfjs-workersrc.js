@@ -1,7 +1,8 @@
+/* globals PDFJS */
 export default {
     name: 'init-pdfjs-workersrc',
 
     initialize: function() {
-        console.log('initializing PDFJS...')
+        PDFJS.workerSrc = '/assets/pdf.worker.js';
     }
 }
