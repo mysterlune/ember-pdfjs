@@ -6,7 +6,7 @@ var mergeTrees = require('broccoli-merge-trees');
 module.exports = {
   name: 'ember-pdfjs',
 
-  treeFor: function() {
+  treeFor: function(/* tree? */) {
 
     var trees = [];
 
@@ -35,6 +35,21 @@ module.exports = {
     });
 
     trees.push(PDFJSCmaps);
+
+    return mergeTrees(trees);
+  },
+
+  treeForPublic: function(tree) {
+    var trees = [];
+    trees.push(this._super.treeForPublic.apply(this, arguments));
+
+    var publicFiles = pickFiles(tree, {
+        srcDir: '/',
+        files: ['test.pdf'],
+        destDir: '/assets'
+    });
+
+    trees.push(publicFiles);
 
     return mergeTrees(trees);
   },
