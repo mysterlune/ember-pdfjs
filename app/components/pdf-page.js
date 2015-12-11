@@ -133,7 +133,7 @@ export default Ember.Component.extend({
   */
   _renderDocument: function(submission) {
     // TODO Promisify document/page APIs
-    this._renderPage();
+    this._renderPage(1);
   },
 
   /**
@@ -154,62 +154,70 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _renderPage: function() {
-    var pdf = get(this, 'docObject');
+  _renderPage: function(pageNumber) {
 
-    if (!pdf) return;
+    return new Promise(function(resolve, reject) {
 
-    // when rendering first time, we want the current viewport width?
-    // when debouncing from window resize, we want the current viewport width?
-    var self=this,
-      viewport,
-      context,
-      $canvas = this.$(),
-      canvas = $canvas.get(0),
-      parentWidth = this.$().parent().width();
+      var pdf = get(this, 'docObject');
 
-    pdf.getPage(get(this,'pageNumber')).then(function(page) {
+      if (!pdf) return;
 
-      viewport = page.getViewport(parentWidth / page.getViewport(1.0).width);
-      context = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      // when rendering first time, we want the current viewport width?
+      // when debouncing from window resize, we want the current viewport width?
+      var self=this,
+        viewport,
+        context,
+        $canvas = this.$(),
+        canvas = $canvas.get(0),
+        parentWidth = this.$().parent().width();
 
-      page.getTextContent().then(function (textContent) {
+      // Should we just rely upon the caller to tell which page should be rendered?
+      //var pageNumber = get(this,'pageNumber');
 
-        var canvasOffset = $canvas.offset();
-        var $textLayerDiv = self.$("<div />")
-          .addClass("textLayer")
-          .css("height", viewport.height + "px")
-          .css("width", viewport.width + "px")
-          .offset({
-              top: canvasOffset.top,
-              left: canvasOffset.left
+      pdf.getPage(pageNumber).then(function(page) {
+
+        viewport = page.getViewport(parentWidth / page.getViewport(1.0).width);
+        context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        page.getTextContent().then(function (textContent) {
+
+          var canvasOffset = $canvas.offset();
+          var $textLayerDiv = self.$("<div />")
+            .addClass("textLayer")
+            .css("height", viewport.height + "px")
+            .css("width", viewport.width + "px")
+            .offset({
+                top: canvasOffset.top,
+                left: canvasOffset.left
+            });
+
+          self.$().after($textLayerDiv);
+
+          var textLayer = new PDFJS.TextLayerBuilder({
+            textLayerDiv: $textLayerDiv.get(0),
+            pageIndex: get(self,'pageNumber')-1,
+            viewport: viewport
           });
 
-        self.$().after($textLayerDiv);
+          textLayer.setTextContent(textContent);
 
-        var textLayer = new PDFJS.TextLayerBuilder({
-          textLayerDiv: $textLayerDiv.get(0),
-          pageIndex: get(self,'pageNumber')-1,
-          viewport: viewport
+          var renderTask = page.render({
+            canvasContext: context,
+            viewport: viewport,
+            textLayer: textLayer
+          });
+
+          renderTask.promise.then(function() {
+            textLayer.render();
+            resolve();
+          });
+
         });
-
-        textLayer.setTextContent(textContent);
-
-        var renderTask = page.render({
-          canvasContext: context,
-          viewport: viewport,
-          textLayer: textLayer
-        });
-
-        renderTask.promise.then(function() {
-          textLayer.render();
-        });
-
       });
-    });
 
+    }.bind(this));
   }
 
 });
