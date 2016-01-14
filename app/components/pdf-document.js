@@ -4,7 +4,6 @@ const get = Ember.get;
 const set = Ember.set;
 const bind = Ember.run.bind;
 const $window = Ember.$(window);
-const $document = Ember.$(document);
 
 export default Ember.Component.extend({
 
@@ -51,8 +50,44 @@ export default Ember.Component.extend({
   * @return void
   */
   _onScroll() {
-    $window.on('scroll.pdf', bind(this, this._didScroll));
+    $window.on('scroll.pdf', bind(this, this._whenUserScrolls));
   },
+
+  /**
+  * Runs when the user scrolls
+  *
+  * @private
+  * @method _whenUserScrolls
+  * @for Ember-PDFJS.PdfPage
+  * @return void
+  */
+  _whenUserScrolls(event) {
+    
+    var target = event.currentTarget,
+      scrollTop = window.pageYOffset || target.scrollTop || 0,
+      pageHeight = get(this, 'pageHeight'),
+      currentIndex = scrollTop / pageHeight,
+      pages = get(this, 'pages');
+
+    pages = pages.map((page, index) => {
+      // if this pages index is 2 above or 2 below the currentIndex
+      // then we will set isActive so the pdf-page renders its pdf
+      // content, and will set false if not so pdf-page removes its
+      // pdf content from the DOM
+      if (currentIndex +2 >= index && currentIndex -2 <= index) {
+        set(page, 'isActive', true);
+        console.log('page isActive', page.pageIndex);
+      }
+      else {
+        set(page, 'isActive', false);
+      }
+
+      return page;        
+    });
+
+    set(this, 'pages', pages);
+  },
+
 
   /**
   * Runs as a hook in Ember when the element for this component
@@ -76,8 +111,8 @@ export default Ember.Component.extend({
       this._onScroll();
 
       this._getDocument(docInitParams)
-        .then(this._didReceiveDocument.bind(this))
-        .then(this._renderDocument.bind(this))
+        .then(this._receiveDocument.bind(this))
+        .then(this._createDocument.bind(this))
         .then(this._loadPages.bind(this));
     });
 
@@ -119,7 +154,7 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return {Promise} Resolves when the document is received and set as a local
   */
-  _didReceiveDocument(submission) {
+  _receiveDocument(submission) {
 
     return new Promise((resolve, reject) => {
       
@@ -138,11 +173,11 @@ export default Ember.Component.extend({
   * to be used in pdf-document.hbs and it also returns the pages via promise resolve
   *
   * @private
-  * @method _renderDocument
+  * @method _createDocument
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _renderDocument() {
+  _createDocument() {
 
     return new Promise((resolve, reject) => {
 
@@ -162,7 +197,7 @@ export default Ember.Component.extend({
   },
 
   /**
-  * This gets called by a promise chain after _renderDocument
+  * This gets called by a promise chain after _createDocument
   *
   * @private
   * @method _loadPages
@@ -170,73 +205,60 @@ export default Ember.Component.extend({
   * @return void
   */
   _loadPages(pages) {
-    set(this, 'isLoading', false);
-    set(this, 'pages', pages);
-    this._addPages();
-  },
-
-  /**
-  * Does the heavy lifting of moving pages from pages to content
-  *
-  * @private
-  * @method _addPages
-  * @for Ember-PDFJS.PdfPage
-  * @return {Promise} Resolves when pages are added
-  */
-  _addPages() {
-
     return new Promise((resolve, reject) => {
+      set(this, 'isLoading', false);
 
-      var content = get(this, 'content') || [],
-          pages = get(this, 'pages') || [];
+      // set initial pages to render
+      pages = pages.map((page, index) => {
+        if (index < 4) set(page, 'isActive', true);
+        return page;
+      });
 
-      var pagesLeft = pages.length < 4 ? pages.length : 4;
-
-      for (var i = 0; i < pagesLeft; i++) {
-        content.pushObject(pages.shift());
-      }
-
-      set(this, 'content', content);
       set(this, 'pages', pages);
 
       resolve();
     });
-
   },
 
   /**
-  * Runs when the user scrolls
+  * This gets called by this.sendAction in pdf-page and sets the pageHeight property
+  * on pdf-document
   *
-  * @private
-  * @method _didScroll
+  * TODO: figure out why this is set wrong inside this function, had to pass that in
+  * because this gets called by this.sendAction inside pdf-page
+  *
+  * @public
+  * @method setDimensions
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _didScroll() {
-    if (this._isNearBottom() && !this.get('isLoading')) {
-      set(this, 'isLoading', true);
-      
-      this._addPages().then(() => {
-        set(this, 'isLoading', false);
-      })
+  setDimensions: function(that, height, width) {
+    // only set once so other observers, etc, don't fire multiple times
+    if (!get(that, 'pageHeight')) {
+      set(that, 'pageHeight', height);
     }
-
   },
 
   /**
-  * Checks to see whether we have reached near the bottom of the page
+  * This gets called when the pdf-document pageHeight property gets set, it then goes and
+  * sets the height property of all pages to the height of the first rendered page to check
+  * in.
   *
-  * @private
-  * @method _isNearBottom
+  * @public
+  * @method _setBlankPageDimensions
   * @for Ember-PDFJS.PdfPage
-  * @return boolean
+  * @return void
   */
-  _isNearBottom() {
-    var top = $document.scrollTop(),
-        bottom = $document.height() - $window.height();
+  _setBlankPageDimensions: Ember.observer('pageHeight', function() {
 
-    return top && (bottom - top) < 150;
-  }
+    var pages = get(this, 'pages');
 
+    pages = pages.map((page) => {
+      set(page, 'height', get(this, 'pageHeight'));
+      return page;
+    });
+
+    set(this, 'pages', pages);
+  })
 
 });

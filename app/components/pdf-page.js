@@ -6,15 +6,36 @@ const set = Ember.set;
 export default Ember.Component.extend({
 
   /**
-  * Hook that removes the element from the DOM if it has been destroyed
+  * Runs as a hook that sets the component height if it changes
   *
-  * @method  willDestroyElement
+  * @method  didChangeDimensions
   * @return void
   */
-  willDestroyElement() {
-    this.$().remove();
-  },
+  didChangeDimensions: Ember.observer('page.height', function() {
+    this.$().height(get(this, 'page.height'));
+  }),
 
+  /**
+  * Runs as a hook that will render or destroy a PDF page based on its page.isActive state
+  *
+  * @method  pageChange
+  * @return void
+  */
+  pageChange: Ember.observer('page.isActive', function() {
+
+    if (get(this, 'page.isActive')) {
+      this.$().removeClass('blank-page');
+      this._renderPage(get(this, 'page'))
+    }
+    else {
+      this.$().addClass('blank-page');
+      this.$('canvas').fadeOut().remove();
+      this.$('.textLayer').fadeOut().remove();
+    }
+
+    return get(this, 'page');
+  }),
+  
   /**
   * Runs as a hook in Ember when the element for this component
   * has been applied to the DOM.
@@ -24,7 +45,14 @@ export default Ember.Component.extend({
   */
   didInsertElement() {
 
-    this._renderPage(this.get('page'));
+    if (get(this, 'page.isActive')) {
+      this._renderPage(get(this, 'page')).then(() => {
+        this.sendAction('setDimensions',  this.parentView, this.$().height(), this.$().width());
+      });
+    }
+    else {
+      this.$().addClass('blank-page');
+    }
 
     // TODO: We need a way to hook into the PDFJS library to apply
     //   the same custom treatment as is given to the jqXHR object
@@ -33,14 +61,18 @@ export default Ember.Component.extend({
     this._super();
   },
 
+  /**
+  * Called from didInsertElement and pageChange, renders the PDF page
+  *
+  * @method  _renderPage
+  * @return void
+  */
   _renderPage(page) {
 
     return new Promise((resolve, reject) => {
 
       if (!page) return;
 
-      // when rendering first time, we want the current viewport width?
-      // when debouncing from window resize, we want the current viewport width?
       var viewport,
           context,
           canvas = document.createElement('canvas'),
@@ -50,7 +82,7 @@ export default Ember.Component.extend({
 
       this.$().append($canvas);
 
-      viewport = page.getViewport($parent.width() / page.getViewport(1.0).width);
+      viewport = page.getViewport($parent.width() / page.getViewport(1.0).width - 0.01);
       context = canvas.getContext('2d');
       canvas.height = viewport.height;
       canvas.width = viewport.width;
@@ -59,7 +91,9 @@ export default Ember.Component.extend({
 
         var canvasOffset = $canvas.offset();
 
-        var $textLayerDiv = this.$("<div />")
+        var $textLayerDiv = this.$('<div>');
+
+        $textLayerDiv
           .addClass("textLayer")
           .css("height", viewport.height + "px")
           .css("width", viewport.width + "px")
@@ -67,7 +101,6 @@ export default Ember.Component.extend({
               top: canvasOffset.top,
               left: canvasOffset.left
           });
-
 
         this.$().append($textLayerDiv);
 
@@ -92,7 +125,7 @@ export default Ember.Component.extend({
 
       });
 
-    }.bind(this));
+    });
   }
 
 });
