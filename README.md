@@ -8,17 +8,17 @@ Within your `ember-cli` project:
 
 * `ember install ember-pdfjs`
 
-This will add a `pdf-page` component to your application
+This will add a `pdf-document` component to your application that will lazy load 4 pages at a time to ensure quick rendering.
 
 ## Usage
 
 In a template, just do:
 
 ````
-{{pdf-page src=[the location]}}
+{{pdf-document src=[the location]}}
 ````
 
-At the time of this writing, the first page of the PDF will render, with the text layer dumbly created and tacked on after the `canvas` element.
+At the time of this writing, each page of the PDF will render, with the text layer dumbly created and tacked on after the `canvas` element.
 
 ## Caveats
 This project is nascent, and needs your help! ;)
