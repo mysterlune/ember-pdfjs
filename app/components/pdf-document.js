@@ -65,7 +65,7 @@ export default Ember.Component.extend({
     
     var target = event.currentTarget,
       scrollTop = window.pageYOffset || target.scrollTop || 0,
-      pageHeight = get(this, 'pageHeight'),
+      pageHeight = get(this, 'pageHeight') + 5 // .blank-page margin-bottom
       currentIndex = scrollTop / pageHeight,
       pages = get(this, 'pages');
 
