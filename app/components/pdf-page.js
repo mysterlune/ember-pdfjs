@@ -1,4 +1,4 @@
-/* globals PDFJS Promise */
+/* globals PDFJS Promise window */
 import Ember from 'ember';
 const get = Ember.get;
 const set = Ember.set;
@@ -29,8 +29,7 @@ export default Ember.Component.extend({
     }
     else {
       this.$().addClass('blank-page');
-      this.$('canvas').fadeOut().remove();
-      this.$('.textLayer').fadeOut().remove();
+      this.$().html('');  // remove canvas and textLayer
     }
 
     return get(this, 'page');
@@ -47,7 +46,7 @@ export default Ember.Component.extend({
 
     if (get(this, 'page.isActive')) {
       this._renderPage(get(this, 'page')).then(() => {
-        this.sendAction('setDimensions',  this.parentView, this.$().height(), this.$().width());
+        this.sendAction('setDimensions',  this.parentView, this.$().height());
       });
     }
     else {
@@ -77,10 +76,12 @@ export default Ember.Component.extend({
           context,
           canvas = document.createElement('canvas'),
           $canvas = $(canvas),
+          $textLayerDiv = this.$('<div>'),
           $container = $('.pdf-document-container'),
           $parent = $container.parent();
 
       this.$().append($canvas);
+      this.$().append($textLayerDiv);
 
       viewport = page.getViewport($parent.width() / page.getViewport(1.0).width - 0.01);
       context = canvas.getContext('2d');
@@ -91,22 +92,18 @@ export default Ember.Component.extend({
 
         var canvasOffset = $canvas.offset();
 
-        var $textLayerDiv = this.$('<div>');
-
         $textLayerDiv
           .addClass("textLayer")
           .css("height", viewport.height + "px")
           .css("width", viewport.width + "px")
           .offset({
-              top: canvasOffset.top -60, // account for top margin
-              left: canvasOffset.left -15 // align text more to left
+              top: canvasOffset.top, 
+              left: canvasOffset.left 
           });
-
-        this.$().append($textLayerDiv);
 
         var textLayer = new PDFJS.TextLayerBuilder({
           textLayerDiv: $textLayerDiv.get(0),
-          pageIndex: get(this, 'pageNumber')-1,
+          pageIndex: get(this, 'page').pageIndex,
           viewport: viewport
         });
 
