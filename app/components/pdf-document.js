@@ -1,4 +1,4 @@
-/* globals PDFJS Promise */
+/* globals PDFJS Promise window */
 import Ember from 'ember';
 const get = Ember.get;
 const set = Ember.set;
@@ -38,7 +38,7 @@ export default Ember.Component.extend({
   * @return void
   */
   willDestroyElement() {
-    $window.off('scroll.pdf');
+    $window.off('scroll.' + get(this, 'elementId'));
   },
 
   /**
@@ -50,22 +50,21 @@ export default Ember.Component.extend({
   * @return void
   */
   _onScroll() {
-    $window.on('scroll.pdf', bind(this, this._whenUserScrolls));
+    $window.on('scroll.' + get(this, 'elementId'), bind(this, this._whenUserScrolls));
   },
 
   /**
   * Runs when the user scrolls
   *
-  * @private
   * @method _whenUserScrolls
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
   _whenUserScrolls(event) {
-    
+
     var target = event.currentTarget,
       scrollTop = window.pageYOffset || target.scrollTop || 0,
-      pageHeight = get(this, 'pageHeight') + 5 // .blank-page margin-bottom
+      pageHeight = get(this, 'pageHeight') + 5, // 5px margin-bottomd
       currentIndex = scrollTop / pageHeight,
       pages = get(this, 'pages');
 
@@ -76,7 +75,7 @@ export default Ember.Component.extend({
       // pdf content from the DOM
       if (currentIndex +2 >= index && currentIndex -2 <= index) {
         set(page, 'isActive', true);
-        console.log('page isActive', page.pageIndex);
+        // console.log('page isActive', page.pageIndex);
       }
       else {
         set(page, 'isActive', false);
@@ -196,6 +195,7 @@ export default Ember.Component.extend({
     });
   },
 
+
   /**
   * This gets called by a promise chain after _createDocument
   *
@@ -206,8 +206,6 @@ export default Ember.Component.extend({
   */
   _loadPages(pages) {
     return new Promise((resolve, reject) => {
-      set(this, 'isLoading', false);
-
       // set initial pages to render
       pages = pages.map((page, index) => {
         if (index < 4) set(page, 'isActive', true);
@@ -216,7 +214,7 @@ export default Ember.Component.extend({
 
       set(this, 'pages', pages);
 
-      resolve();
+      resolve(pages);
     });
   },
 
@@ -232,7 +230,7 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  setDimensions: function(that, height, width) {
+  setDimensions: function(that, height) {
     // only set once so other observers, etc, don't fire multiple times
     if (!get(that, 'pageHeight')) {
       set(that, 'pageHeight', height);

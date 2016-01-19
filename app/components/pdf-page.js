@@ -98,8 +98,8 @@ export default Ember.Component.extend({
           .css("height", viewport.height + "px")
           .css("width", viewport.width + "px")
           .offset({
-              top: canvasOffset.top,
-              left: canvasOffset.left
+              top: canvasOffset.top -60, // account for top margin
+              left: canvasOffset.left -15 // align text more to left
           });
 
         this.$().append($textLayerDiv);
