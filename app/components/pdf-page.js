@@ -3,38 +3,36 @@ import Ember from 'ember';
 const get = Ember.get;
 const set = Ember.set;
 
+let testing = $('#ember-testing-container').length;
+
 export default Ember.Component.extend({
 
   /**
-  * Runs as a hook that sets the component height if it changes
+  * Observer that sets the component height if it changes
   *
-  * @method  didChangeDimensions
+  * @method  _setHeight
   * @return void
   */
-  didChangeDimensions: Ember.observer('page.height', function() {
+  _setHeight: Ember.observer('page.height', function() {
     this.$().height(get(this, 'page.height'));
   }),
 
   /**
-  * Runs as a hook that will render or destroy a PDF page based on its page.isActive state
+  * Observer that will render or destroy a PDF page based on its page.isActive state
   *
-  * @method  pageChange
+  * @method  _changePage
   * @return void
   */
-  pageChange: Ember.observer('page.isActive', function() {
-
-    if (get(this, 'page.isActive')) {
-      this.$().removeClass('blank-page');
-      this._renderPage(get(this, 'page'))
-    }
-    else {
-      this.$().addClass('blank-page');
-      this.$().html('');  // remove canvas and textLayer
-    }
-
-    return get(this, 'page');
+  _changePage: Ember.observer('page.isActive', function() {
+    this._setupPage().then(() => {
+      if (testing) {
+        if (get(this, 'page.pageIndex') === 5) {
+          this.sendAction('pageChanged');
+        }      
+      }
+    });
   }),
-  
+
   /**
   * Runs as a hook in Ember when the element for this component
   * has been applied to the DOM.
@@ -43,33 +41,44 @@ export default Ember.Component.extend({
   * @return void
   */
   didInsertElement() {
-
-    if (get(this, 'page.isActive')) {
-      this._renderPage(get(this, 'page')).then(() => {
-        this.sendAction('setDimensions',  this.parentView, this.$().height());
-      });
-    }
-    else {
-      this.$().addClass('blank-page');
-    }
-
+    this._setupPage();
     // TODO: We need a way to hook into the PDFJS library to apply
     //   the same custom treatment as is given to the jqXHR object
     //   via `authorize`, etc... but for now, we need to set some
     //   parameters to give to the downstream xhr caller
     this._super();
+  },  
+
+  /**
+  * Gets called by _changePage and didInsertElement to render and unrender pages
+  * as isActive gets set
+  *
+  * @method  _setupPage
+  * @return void
+  */  
+  _setupPage() {
+    return new Promise((resolve, reject) => {
+      if (get(this, 'page.isActive')) {
+        this._renderPage(get(this, 'page')).then(() => {
+          if (!this.$()) return;
+          this.sendAction('setHeight',  this.parentView, this.$().height());
+        });
+      }
+      else {
+        this.$().html('');
+      }
+      resolve();
+    });
   },
 
   /**
-  * Called from didInsertElement and pageChange, renders the PDF page
+  * Renders the actual PDF and textLayer
   *
   * @method  _renderPage
   * @return void
   */
   _renderPage(page) {
-
     return new Promise((resolve, reject) => {
-
       if (!page) return;
 
       var viewport,
@@ -103,7 +112,7 @@ export default Ember.Component.extend({
 
         var textLayer = new PDFJS.TextLayerBuilder({
           textLayerDiv: $textLayerDiv.get(0),
-          pageIndex: get(this, 'page').pageIndex,
+          pageIndex: get(this, 'page.pageIndex'),
           viewport: viewport
         });
 
@@ -119,9 +128,7 @@ export default Ember.Component.extend({
           textLayer.render();
           resolve();
         });
-
       });
-
     });
   }
 
