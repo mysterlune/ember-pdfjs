@@ -5,7 +5,7 @@ import moduleForAcceptance from '../../tests/helpers/module-for-acceptance';
 
 var application;
 
-moduleForAcceptance('Acceptance | loads component', {
+moduleForAcceptance('Acceptance | PDF | ', {
 
   beforeEach: function() {
     application = startApp();
@@ -17,7 +17,8 @@ moduleForAcceptance('Acceptance | loads component', {
 });
 
 
-test('PDF loads and dynamically renders and unrenders pages as user scrolls', function(assert) {
+test('loads, scrolling causes new pages to render and old pages to expire from the DOM.', function(assert) {
+
   visit('/');
 
   // promise hooks that need to resolve inside pdf-document
@@ -26,6 +27,7 @@ test('PDF loads and dynamically renders and unrenders pages as user scrolls', fu
   waitForPromise(loaded);
 
   andThen(function() {
+    
     var $container = find('.pdf-document-container');
     
     assert.equal($container.children().length, 14); // 14 pdf-page components in DOM
