@@ -34,6 +34,22 @@ export default Ember.Component.extend({
   }),
 
   /**
+  * Observer that resize pages if window size changes
+  *
+  * @method  _resizePage
+  * @return void
+  */
+  _resizePage: Ember.observer('page.rerender', function() {
+    this.$().html('');
+    this._setupPage().then(() => {
+      var height = this.$('canvas').height();
+      this.$().height(height);
+      this.sendAction('setHeight',  this.parentView, height, true);
+      set(this, 'page.rerender', false);
+    });
+  }),
+
+  /**
   * Runs as a hook in Ember when the element for this component
   * has been applied to the DOM.
   *

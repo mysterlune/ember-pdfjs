@@ -79,6 +79,7 @@ export default Ember.Component.extend({
   willDestroyElement() {
     var $scrollElement = testing ? $('#ember-testing-container') : $window;
     $scrollElement.off('scroll.' + get(this, 'elementId'));
+    $scrollElement.off('resize.' + get(this, 'elementId'));
   },
 
   /**
@@ -92,6 +93,28 @@ export default Ember.Component.extend({
   _onScroll() {
     var $scrollElement = testing ? $('#ember-testing-container') : $window;
     $scrollElement.on('scroll.' + get(this, 'elementId'), bind(this, this._whenUserScrolls));
+    $scrollElement.on('resize.' + get(this, 'elementId'), bind(this, this._whenWindowResizes));
+  },
+
+  /**
+  * Runs when the user resizes the browser window.  This will re-render the active
+  * pages and resize all the blank pages
+  *
+  * @method _whenWindowResizes
+  * @for Ember-PDFJS.PdfPage
+  * @return void
+  */
+  _whenWindowResizes() {
+    var pages = get(this, 'pages');
+
+    pages = pages.map((page, index) => {
+      if (get(page, 'isActive')) {
+        set(page, 'rerender', true);
+      }
+      return page;
+    });
+
+    set(this, 'pages', pages);
   },
 
   /**
@@ -103,8 +126,8 @@ export default Ember.Component.extend({
   * @return void
   */
   _whenUserScrolls(event) {
-    var target = event.currentTarget,
-      scrollTop = window.pageYOffset || target.scrollTop || 0,
+    var target = event && event.currentTarget,
+      scrollTop = window.pageYOffset || target && target.scrollTop || 0,
       pageHeight = get(this, 'pageHeight') + 5, // 5px margin-bottomd
       currentIndex = scrollTop / pageHeight,
       pages = get(this, 'pages');
@@ -136,7 +159,6 @@ export default Ember.Component.extend({
   * @return void
   */
   didInsertElement() {
-
     Ember.run.scheduleOnce('afterRender', this, () => {
 
       // Move to host app?
@@ -273,10 +295,11 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  setHeight: function(that, height) {
-    // only set once so other observers, etc, don't fire multiple times
-    if (!get(that, 'pageHeight')) {
-      set(that, 'pageHeight', height);
+  setHeight: function(that, height, rerender) {
+    set(that, 'pageHeight', height);
+
+    if (rerender) {
+      set(that, 'rerender', rerender);
     }
   },
 
@@ -320,6 +343,10 @@ export default Ember.Component.extend({
       });
 
       set(this, 'pages', pages);
+
+      if (get(this, 'rerender')) {
+        this._whenUserScrolls();
+      }
 
       if (testing) {
         finishedLoading();
