@@ -2,10 +2,19 @@
 import Ember from 'ember';
 const get = Ember.get;
 const set = Ember.set;
+const { Promise } = Ember.RSVP;
 
 let testing = $('#ember-testing-container').length;
 
 export default Ember.Component.extend({
+
+  /**
+  * The `classNames` of the document container.
+  *
+  * @property
+  * @default
+  */
+  classNames: ['page'],
 
   /**
   * Observer that sets the component height if it changes
@@ -39,13 +48,18 @@ export default Ember.Component.extend({
   * @method  _resizePage
   * @return void
   */
-  _resizePage: Ember.observer('page.rerender', function() {
+  _resizePage: Ember.observer('page.resize', function() {
+    
     this.$().html('');
+    
     this._setupPage().then(() => {
+      
       var height = this.$('canvas').height();
       this.$().height(height);
+
       this.sendAction('setHeight',  this.parentView, height, true);
-      set(this, 'page.rerender', false);
+      
+      set(this, 'page.resize', false);
     });
   }),
 
@@ -118,9 +132,9 @@ export default Ember.Component.extend({
         var canvasOffset = $canvas.offset();
 
         $textLayerDiv
-          .addClass("textLayer")
-          .css("height", viewport.height + "px")
-          .css("width", viewport.width + "px")
+          .addClass('textLayer')
+          .css('height', viewport.height + 'px')
+          .css('width', viewport.width + 'px')
           .offset({
               top: canvasOffset.top, 
               left: canvasOffset.left 

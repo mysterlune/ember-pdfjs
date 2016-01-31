@@ -7,6 +7,14 @@ const $window = Ember.$(window);
 const { Promise } = Ember.RSVP;
 
 
+const getLocation = (event, pageHeight) => {
+  let target = event && event.currentTarget;
+  let scrollTop = window.pageYOffset || target && target.scrollTop || 0;
+  let currentIndex = Math.round(scrollTop / (pageHeight + 5));
+
+  return currentIndex;
+};
+
 /**
 *  Test hooks so tests know when all the async calls in this component have 
 *  been resolved.
@@ -71,6 +79,7 @@ export default Ember.Component.extend({
   },
 
   /**
+  * Event Binding
   * Hook that tears down scroll binding
   *
   * @method  willDestroyElement
@@ -83,6 +92,7 @@ export default Ember.Component.extend({
   },
 
   /**
+  * Event Binding
   * Binds scroll event on window with .pdf namespace so we don't
   * unbind other functions that bind on window scroll when we
   * tear down.
@@ -97,6 +107,7 @@ export default Ember.Component.extend({
   },
 
   /**
+  * Event
   * Runs when the user resizes the browser window.  This will re-render the active
   * pages and resize all the blank pages
   *
@@ -105,11 +116,15 @@ export default Ember.Component.extend({
   * @return void
   */
   _whenWindowResizes() {
+
+    var pageIndex = getLocation(null, get(this, 'pageHeight'));
+    set(this, 'pageIndex', pageIndex);
+
     var pages = get(this, 'pages');
 
     pages = pages.map((page, index) => {
       if (get(page, 'isActive')) {
-        set(page, 'rerender', true);
+        set(page, 'resize', true);
       }
       return page;
     });
@@ -118,19 +133,19 @@ export default Ember.Component.extend({
   },
 
   /**
-  * Runs when the user scrolls and sets 4 pages active at a time as the user
+  * Event
+  * Runs when the user scrolls and sets 5 pages active at a time as the user
   * scrolls through the document
   *
   * @method _whenUserScrolls
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _whenUserScrolls(event) {
-    var target = event && event.currentTarget,
-      scrollTop = window.pageYOffset || target && target.scrollTop || 0,
-      pageHeight = get(this, 'pageHeight') + 5, // 5px margin-bottomd
-      currentIndex = scrollTop / pageHeight,
-      pages = get(this, 'pages');
+  _whenUserScrolls(event, ) {
+
+    var currentIndex = getLocation(event, get(this, 'pageHeight'));
+
+    var pages = get(this, 'pages');
 
     pages = pages.map((page, index) => {
       // if this pages index is 2 above or 2 below the currentIndex
@@ -189,6 +204,7 @@ export default Ember.Component.extend({
   },
 
   /**
+  * Promise
   * Given initialization parameters, try to load the document.
   *
   * @private
@@ -212,6 +228,7 @@ export default Ember.Component.extend({
   },
 
   /**
+  * Promise
   * Once the document has been extracted, etc., this handler provides an
   * intermediary step to do additional work (send actions, store local props, etc.)
   *
@@ -233,6 +250,7 @@ export default Ember.Component.extend({
   },
 
   /**
+  * Promise
   * This hook essentially calls for rendering a document. It sets the pages property
   * to be used in pdf-document.hbs and it also returns the pages via promise resolve
   *
@@ -252,7 +270,7 @@ export default Ember.Component.extend({
         pages.push(pdf.getPage(i));
       }
 
-      Ember.RSVP.all(pages).then((pages) => {
+      Promise.all(pages).then((pages) => {
         resolve(pages);
       });
     });
@@ -260,6 +278,7 @@ export default Ember.Component.extend({
 
 
   /**
+  * Promise
   * This gets called by a promise chain after _createDocument. This sets the
   * initial active pages (i.e. the first 4)
   *
@@ -295,11 +314,11 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  setHeight: function(that, height, rerender) {
+  setHeight: function(that, height, resize) {
     set(that, 'pageHeight', height);
 
-    if (rerender) {
-      set(that, 'rerender', rerender);
+    if (resize) {
+      set(that, 'resize', resize);
     }
   },
 
@@ -323,6 +342,7 @@ export default Ember.Component.extend({
   },
 
   /**
+  * Observer
   * This gets called when the pdf-document pageHeight property gets set, it then goes and
   * sets the height property of all pages to the height of the first rendered page to check
   * in.  It also resolves the componentLoaded promise with finishedLoading() so acceptance
@@ -342,11 +362,13 @@ export default Ember.Component.extend({
         return page;
       });
 
-      set(this, 'pages', pages);
-
-      if (get(this, 'rerender')) {
-        this._whenUserScrolls();
+      if (get(this, 'resize')) {
+        var pageIndex = get(this, 'pageIndex');
+        var page = this.$().children()[pageIndex];
+        page.scrollIntoView();
       }
+
+      set(this, 'pages', pages);
 
       if (testing) {
         finishedLoading();
