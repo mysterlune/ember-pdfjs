@@ -14,7 +14,7 @@ export default Ember.Component.extend({
   * @property
   * @default
   */
-  classNames: ['page'],
+  classNames: ['pdf-page'],
 
   /**
   * Observer that sets the component height if it changes
@@ -36,7 +36,7 @@ export default Ember.Component.extend({
     this._setupPage().then(() => {
       if (testing) {
         if (get(this, 'page.pageIndex') === 5) {
-          this.sendAction('pageChanged');
+          this.sendAction('doneScrolling');
         }      
       }
     });

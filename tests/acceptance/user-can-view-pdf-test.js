@@ -5,7 +5,7 @@ import moduleForAcceptance from '../../tests/helpers/module-for-acceptance';
 
 var application;
 
-moduleForAcceptance('Acceptance | PDF | ', {
+moduleForAcceptance('Acceptance | PDF', {
 
   beforeEach: function() {
     application = startApp();
@@ -18,18 +18,14 @@ moduleForAcceptance('Acceptance | PDF | ', {
 
 
 test('loads, scrolling causes new pages to render and old pages to expire from the DOM.', function(assert) {
-
   visit('/');
 
-  // promise hooks that need to resolve inside pdf-document
   var loaded = application.__container__.lookup('component:pdf-document').get('componentLoaded');
-  
-  waitForPromise(loaded);
 
+  waitForPromise(loaded);
   andThen(function() {
-    
     var $container = find('.pdf-document-container');
-    
+
     assert.equal($container.children().length, 14); // 14 pdf-page components in DOM
     assert.ok(!$container.children().first().is(':empty')); // make sure the first page has content
 
@@ -39,10 +35,9 @@ test('loads, scrolling causes new pages to render and old pages to expire from t
     var scrolled = application.__container__.lookup('component:pdf-document').get('componentScrolled');
 
     waitForPromise(scrolled);
-
     andThen(function() {
       assert.ok($container.children().first().is(':empty')); // make sure the first page is empty
-      assert.ok(!$($container.children()[5]).is(':empty')); // make sure the 5th page has content
+      assert.ok(!$($container.children()[5]).is(':empty')); // make sure the 6th page has content
     });
   });
 });

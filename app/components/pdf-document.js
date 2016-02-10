@@ -1,11 +1,36 @@
 /* globals PDFJS Promise window */
+
+/**
+* This program has 3 basic workflows. 
+*
+* First is the loading of the document and generation of the individual pages. 
+* This happens using methods on the PDFJS global and is a promise chain. It 
+* populates the get(this, 'pages') array and renders the initial pages.
+*
+* The second workflow is the sizing of the pages and blank pages. This happens 
+* through communication with pdf-page. pdf-page lets pdf-document know the height 
+* of the first canvas rendered. pdf-document observes this and then sets the 
+* height property on all pages. All pdf-pages then resize themselves.
+*
+* The third workflows are the scroll and resize bindings. The addon will only 
+* render 3-5 pages at a time. When the user scrolls new pages will become rendered 
+* and old pages will be removed from the DOM. Resizing the width of the page will 
+* cause the pages to be re-rendered and all the page sizes will change. It also 
+* makes its best effort at snapping the page to what it was before resizing. This 
+* can get a little wonky when resizing really small and huge.
+*
+* It also has testing hooks built in that will notify acceptance tests when certain 
+* promises have been resolved. If it finds the #ember-testing-container then it will 
+* activate these hooks.
+*/
+
 import Ember from 'ember';
+
 const get = Ember.get;
 const set = Ember.set;
 const bind = Ember.run.bind;
-const $window = Ember.$(window);
 const { Promise } = Ember.RSVP;
-
+const $window = Ember.$(window);
 
 const getLocation = (event, pageHeight) => {
   let target = event && event.currentTarget;
@@ -141,7 +166,7 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _whenUserScrolls(event, ) {
+  _whenUserScrolls(event) {
 
     var currentIndex = getLocation(event, get(this, 'pageHeight'));
 
@@ -280,7 +305,7 @@ export default Ember.Component.extend({
   /**
   * Promise
   * This gets called by a promise chain after _createDocument. This sets the
-  * initial active pages (i.e. the first 4)
+  * initial active pages (i.e. the first 3)
   *
   * @private
   * @method _loadPages
@@ -291,7 +316,7 @@ export default Ember.Component.extend({
     return new Promise((resolve, reject) => {
       // set initial pages to render
       pages = pages.map((page, index) => {
-        if (index < 4) set(page, 'isActive', true);
+        if (index < 3) set(page, 'isActive', true);
         return page;
       });
 
@@ -318,7 +343,7 @@ export default Ember.Component.extend({
     set(that, 'pageHeight', height);
 
     if (resize) {
-      set(that, 'resize', resize);
+      set(that, 'resize', true);
     }
   },
 
@@ -327,15 +352,12 @@ export default Ember.Component.extend({
   * This gets called by this.sendAction in pdf-page and lets pdf-document know when a
   * new page loads after being scrolled
   *
-  * TODO: figure out why this is set wrong inside this function, had to pass that in
-  * because this gets called by this.sendAction inside pdf-page
-  *
   * @public
-  * @method pageChanged
+  * @method doneScrolling
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  pageChanged: function() {
+  doneScrolling: function() {
     if (testing) {
       finishedScrolling();
     }
