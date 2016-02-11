@@ -70,7 +70,7 @@ export default Ember.Component.extend({
   * @method  didInsertElement
   * @return void
   */
-  didInsertElement() {
+  didInsertElement: function() {
     this._setupPage();
     // TODO: We need a way to hook into the PDFJS library to apply
     //   the same custom treatment as is given to the jqXHR object
@@ -86,7 +86,7 @@ export default Ember.Component.extend({
   * @method  _setupPage
   * @return void
   */  
-  _setupPage() {
+  _setupPage: function() {
     return new Promise((resolve, reject) => {
       if (get(this, 'page.isActive')) {
         this._renderPage(get(this, 'page')).then(() => {
@@ -107,7 +107,7 @@ export default Ember.Component.extend({
   * @method  _renderPage
   * @return void
   */
-  _renderPage(page) {
+  _renderPage: function(page) {
     return new Promise((resolve, reject) => {
       if (!page) return;
 

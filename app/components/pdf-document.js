@@ -32,7 +32,7 @@ const bind = Ember.run.bind;
 const { Promise } = Ember.RSVP;
 const $window = Ember.$(window);
 
-const getLocation = (event, pageHeight) => {
+const getLocation = function(event, pageHeight) {
   let target = event && event.currentTarget;
   let scrollTop = window.pageYOffset || target && target.scrollTop || 0;
   let currentIndex = Math.round(scrollTop / (pageHeight + 5));
@@ -94,7 +94,7 @@ export default Ember.Component.extend({
   * @method  init
   * @return void
   */
-  init() {
+  init: function() {
     if (testing) {
       set(this, 'componentLoaded', componentLoaded);
       set(this, 'componentScrolled', componentScrolled);      
@@ -110,7 +110,7 @@ export default Ember.Component.extend({
   * @method  willDestroyElement
   * @return void
   */
-  willDestroyElement() {
+  willDestroyElement: function() {
     var $scrollElement = testing ? $('#ember-testing-container') : $window;
     $scrollElement.off('scroll.' + get(this, 'elementId'));
     $scrollElement.off('resize.' + get(this, 'elementId'));
@@ -125,7 +125,7 @@ export default Ember.Component.extend({
   * @method  _onScroll
   * @return void
   */
-  _onScroll() {
+  _onScroll: function() {
     var $scrollElement = testing ? $('#ember-testing-container') : $window;
     $scrollElement.on('scroll.' + get(this, 'elementId'), bind(this, this._whenUserScrolls));
     $scrollElement.on('resize.' + get(this, 'elementId'), bind(this, this._whenWindowResizes));
@@ -140,7 +140,7 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _whenWindowResizes() {
+  _whenWindowResizes: function() {
 
     var pageIndex = getLocation(null, get(this, 'pageHeight'));
     set(this, 'pageIndex', pageIndex);
@@ -166,7 +166,7 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _whenUserScrolls(event) {
+  _whenUserScrolls: function(event) {
 
     var currentIndex = getLocation(event, get(this, 'pageHeight'));
 
@@ -198,7 +198,7 @@ export default Ember.Component.extend({
   * @method  didInsertElement
   * @return void
   */
-  didInsertElement() {
+  didInsertElement: function() {
     Ember.run.scheduleOnce('afterRender', this, () => {
 
       // Move to host app?
@@ -237,7 +237,7 @@ export default Ember.Component.extend({
   @ @for Ember-PDFJS.PdfPage
   * @return {Promise} Resolves when document is initialized, rejects on fail
   */
-  _getDocument(docInitParams) {
+  _getDocument: function(docInitParams) {
     return new Promise((resolve, reject) => {
 
       PDFJS.getDocument(docInitParams)
@@ -262,7 +262,7 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return {Promise} Resolves when the document is received and set as a local
   */
-  _receiveDocument(submission) {
+  _receiveDocument: function(submission) {
     return new Promise((resolve, reject) => {
       
       if (!submission) { 
@@ -284,7 +284,7 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _createDocument() {
+  _createDocument: function() {
     return new Promise((resolve, reject) => {
 
       var pdf = get(this, 'docObject');
@@ -312,7 +312,7 @@ export default Ember.Component.extend({
   * @for Ember-PDFJS.PdfPage
   * @return void
   */
-  _loadPages(pages) {
+  _loadPages: function(pages) {
     return new Promise((resolve, reject) => {
       // set initial pages to render
       pages = pages.map((page, index) => {
