@@ -328,6 +328,22 @@ export default Ember.Component.extend({
 
   /**
   * Action Hook
+  * This gets called by this.sendAction in pdf-page and lets pdf-document know when a
+  * new page loads after being scrolled
+  *
+  * @public
+  * @method doneScrolling
+  * @for Ember-PDFJS.PdfPage
+  * @return void
+  */
+  doneScrolling: function() {
+    if (testing) {
+      finishedScrolling();
+    }
+  },
+
+  /**
+  * Action Hook
   * This gets called by this.sendAction in pdf-page and sets the pageHeight property
   * on pdf-document
   *
@@ -346,23 +362,7 @@ export default Ember.Component.extend({
       set(that, 'resize', true);
     }
   },
-
-  /**
-  * Action Hook
-  * This gets called by this.sendAction in pdf-page and lets pdf-document know when a
-  * new page loads after being scrolled
-  *
-  * @public
-  * @method doneScrolling
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  doneScrolling: function() {
-    if (testing) {
-      finishedScrolling();
-    }
-  },
-
+  
   /**
   * Observer
   * This gets called when the pdf-document pageHeight property gets set, it then goes and
