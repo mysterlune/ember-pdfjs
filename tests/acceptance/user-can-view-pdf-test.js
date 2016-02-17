@@ -17,7 +17,7 @@ moduleForAcceptance('Acceptance | PDF', {
 });
 
 
-test('loads, scrolling causes new pages to render and old pages to expire from the DOM.', function(assert) {
+test('scrolling causes new pages to render and old pages to expire from the DOM.', function(assert) {
   visit('/');
 
   var loaded = application.__container__.lookup('component:pdf-document').get('componentLoaded');

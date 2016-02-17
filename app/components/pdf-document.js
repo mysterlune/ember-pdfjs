@@ -32,7 +32,7 @@ const bind = Ember.run.bind;
 const { Promise } = Ember.RSVP;
 const $window = Ember.$(window);
 
-const getLocation = function(event, pageHeight) {
+const getCurrentIndex = function(event, pageHeight) {
   let target = event && event.currentTarget;
   let scrollTop = window.pageYOffset || target && target.scrollTop || 0;
   let currentIndex = Math.round(scrollTop / (pageHeight + 5));
@@ -40,6 +40,23 @@ const getLocation = function(event, pageHeight) {
   return currentIndex;
 };
 
+
+let lastScrollTop;
+const getDirection = function() {
+  let scrollTop = window.pageYOffset;
+  let direction;
+
+  if (scrollTop > lastScrollTop) {
+    direction = 'down';
+  } 
+  else {
+    direction = 'up';
+  }
+
+  lastScrollTop = scrollTop;
+
+  return  direction;
+};
 /**
 *  Test hooks so tests know when all the async calls in this component have 
 *  been resolved.
@@ -133,6 +150,56 @@ export default Ember.Component.extend({
 
   /**
   * Event
+  * Runs when the user scrolls and sets 5 pages active at a time as the user
+  * scrolls through the document
+  *
+  * @method _whenUserScrolls
+  * @for Ember-PDFJS.PdfPage
+  * @return void
+  */
+  _whenUserScrolls: function(event) {
+
+    var currentIndex, direction, lowerPages, upperPages;
+
+    currentIndex = getCurrentIndex(event, get(this, 'pageHeight'));
+
+    // here we are saying that if the user is scrolling upward, then
+    // we will load 5 pages above where the user is scrolling so they
+    // can experience a seemless rendering when scrolling quickly. Vise
+    // versa for scrolling downward.
+    direction = getDirection();
+    switch(direction) {
+      case 'up':
+        lowerPages = 2;
+        upperPages = 5;
+        break;
+      case 'down':
+        lowerPages = 5;
+        upperPages = 2;
+    }
+
+    var pages = get(this, 'pages');
+
+    pages = pages.map((page, index) => {
+      // if this pages index is 5 above or 2 below the currentIndex
+      // then we will set isActive so the pdf-page renders its pdf
+      // content, and will set false if not so pdf-page removes its
+      // pdf content from the DOM
+      if (currentIndex + lowerPages >= index && currentIndex - upperPages <= index) {
+        set(page, 'isActive', true);
+      }
+      else {
+        set(page, 'isActive', false);
+      }
+
+      return page;        
+    });
+
+    set(this, 'pages', pages);
+  },
+
+  /**
+  * Event
   * Runs when the user resizes the browser window.  This will re-render the active
   * pages and resize all the blank pages
   *
@@ -142,7 +209,7 @@ export default Ember.Component.extend({
   */
   _whenWindowResizes: function() {
 
-    var pageIndex = getLocation(null, get(this, 'pageHeight'));
+    var pageIndex = getCurrentIndex(null, get(this, 'pageHeight'));
     set(this, 'pageIndex', pageIndex);
 
     var pages = get(this, 'pages');
@@ -156,40 +223,6 @@ export default Ember.Component.extend({
 
     set(this, 'pages', pages);
   },
-
-  /**
-  * Event
-  * Runs when the user scrolls and sets 5 pages active at a time as the user
-  * scrolls through the document
-  *
-  * @method _whenUserScrolls
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  _whenUserScrolls: function(event) {
-
-    var currentIndex = getLocation(event, get(this, 'pageHeight'));
-
-    var pages = get(this, 'pages');
-
-    pages = pages.map((page, index) => {
-      // if this pages index is 2 above or 2 below the currentIndex
-      // then we will set isActive so the pdf-page renders its pdf
-      // content, and will set false if not so pdf-page removes its
-      // pdf content from the DOM
-      if (currentIndex +2 >= index && currentIndex -2 <= index) {
-        set(page, 'isActive', true);
-      }
-      else {
-        set(page, 'isActive', false);
-      }
-
-      return page;        
-    });
-
-    set(this, 'pages', pages);
-  },
-
 
   /**
   * Runs as a hook in Ember when the element for this component
@@ -362,7 +395,7 @@ export default Ember.Component.extend({
       set(that, 'resize', true);
     }
   },
-  
+
   /**
   * Observer
   * This gets called when the pdf-document pageHeight property gets set, it then goes and
