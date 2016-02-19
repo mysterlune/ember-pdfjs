@@ -1,12 +1,13 @@
 import resolver from './helpers/resolver';
+import Ember from 'ember';
+
 import {
   setResolver
 } from 'ember-qunit';
 
 setResolver(resolver);
 
-document.write('<div id="ember-testing-container"><div id="ember-testing"></div></div>');
+Ember.Test.adapter = Ember.Test.QUnitAdapter.create();
 
-QUnit.config.urlConfig.push({ id: 'nocontainer', label: 'Hide container'});
-var containerVisibility = QUnit.urlParams.nocontainer ? 'hidden' : 'visible';
-document.getElementById('ember-testing-container').style.visibility = containerVisibility;
+import startApp from "./helpers/start-app";
+window.startApp = startApp;

@@ -1,52 +1,67 @@
-/* globals PDFJS Promise */
+/* globals PDFJS Promise window */
 import Ember from 'ember';
 const get = Ember.get;
 const set = Ember.set;
+const { Promise } = Ember.RSVP;
+
+let testing = $('#ember-testing-container').length;
 
 export default Ember.Component.extend({
 
   /**
-  * The element type for a component rendering a PDFJS page should be
-  * a canvas. Actual text content from the document would need to be
-  * into `div`s, and follow in the DOM as subsequent elements.
+  * The `classNames` of the document container.
   *
   * @property
   * @default
   */
-  tagName: 'canvas',
+  classNames: ['pdf-page'],
 
   /**
-  * The `src` of the document being requested.
+  * Observer that sets the component height if it changes
   *
-  * @property
-  * @default Empty string
+  * @method  _setHeight
+  * @return void
   */
-  src: '',
+  _setHeight: Ember.observer('page.height', function() {
+    this.$().height(get(this, 'page.height'));
+  }),
 
   /**
-  * The number of pages for the given document. This should only get set
-  * after the document has been introspected.
+  * Observer that will render or destroy a PDF page based on its page.isActive state
   *
-  * @property
-  * @default null
+  * @method  _changePage
+  * @return void
   */
-  totalPages: null,
+  _changePage: Ember.observer('page.isActive', function() {
+    this._setupPage().then(() => {
+      if (testing) {
+        if (get(this, 'page.pageIndex') === 5) {
+          this.sendAction('doneScrolling');
+        }      
+      }
+    });
+  }),
 
   /**
-  * The property storing the document.
+  * Observer that resize pages if window size changes
   *
-  * @property
-  * @default null
+  * @method  _resizePage
+  * @return void
   */
-  docObject: null,
+  _resizePage: Ember.observer('page.resize', function() {
+    
+    this.$().html('');
+    
+    this._setupPage().then(() => {
+      
+      var height = this.$('canvas').height();
+      this.$().height(height);
 
-  /**
-  * Page number that should be prioritized for display.
-  *
-  * @property
-  * @default
-  */
-  pageNumber: 1,
+      this.sendAction('setHeight',  this.parentView, height, true);
+      
+      set(this, 'page.resize', false);
+    });
+  }),
 
   /**
   * Runs as a hook in Ember when the element for this component
@@ -55,169 +70,96 @@ export default Ember.Component.extend({
   * @method  didInsertElement
   * @return void
   */
-  didInsertElement: function(){
-
-    Ember.run.scheduleOnce('afterRender', this, function() {
-      var self = this;
-
-      // Move to host app?
-      var token = Ember.$.cookie ? Ember.$.cookie('auth_token') : 'No Cookie!';
-
-      var docInitParams = {
-          url: get(this, 'src'),
-          httpHeaders: { "Authorization": 'Basic %@1'.fmt(token)}
-      }
-
-      this._getDocument(docInitParams).then(
-        this._didReceiveDocument.bind(this)
-      ).then(
-        this._renderDocument.bind(this)
-      );
-
-    });
-
+  didInsertElement: function() {
+    this._setupPage();
     // TODO: We need a way to hook into the PDFJS library to apply
     //   the same custom treatment as is given to the jqXHR object
     //   via `authorize`, etc... but for now, we need to set some
     //   parameters to give to the downstream xhr caller
-
     this._super();
+  },  
 
+  /**
+  * Gets called by _changePage and didInsertElement to render and unrender pages
+  * as isActive gets set
+  *
+  * @method  _setupPage
+  * @return void
+  */  
+  _setupPage: function() {
+    return new Promise((resolve, reject) => {
+      if (get(this, 'page.isActive')) {
+        this._renderPage(get(this, 'page')).then(() => {
+          if (!this.$()) return;
+          this.sendAction('setHeight',  this.parentView, this.$().height());
+        });
+      }
+      else {
+        this.$().html('');
+      }
+      resolve();
+    });
   },
 
   /**
-  * Given initialization parameters, try to load the document.
+  * Renders the actual PDF and textLayer
   *
-  * @private
-  * @method _getDocument
-  @ @for Ember-PDFJS.PdfPage
-  * @return {Promise} Resolves when document is initialized, rejects on fail
-  */
-  _getDocument: function(docInitParams) {
-    return new Promise(function(resolve, reject) {
-      PDFJS.getDocument(docInitParams).then(function(submission) {
-          resolve(submission);
-      }.bind(this)).then(null, function(error){
-          reject(error);
-      }.bind(this));
-    }.bind(this));
-  },
-
-  /**
-  * Once the document has been extracted, etc., this handler provides an
-  * intermediary step to do additional work (send actions, store local props, etc.)
-  *
-  * @private
-  * @method _didReceiveDocument
-  * @for Ember-PDFJS.PdfPage
-  * @return {Promise} Resolves when the document is received and set as a local
-  */
-  _didReceiveDocument: function(submission) {
-    var self = this;
-    return new Promise(function(resolve, reject) {
-      if(!submission) { reject('No submission'); }
-      set(self, 'docObject', submission);
-      resolve(submission);
-    }.bind(this));
-  },
-
-  /**
-  * This hook essentially calls for rendering a page. Here is a good location
-  * to look at any routing information (the controller's/route's `queryParams`
-  * or `params` flags to determine which page should render).
-  *
-  * @private
-  * @method _renderDocument
-  * @for Ember-PDFJS.PdfPage
+  * @method  _renderPage
   * @return void
   */
-  _renderDocument: function(submission) {
-    // TODO Promisify document/page APIs
-    this._renderPage(1);
-  },
+  _renderPage: function(page) {
+    return new Promise((resolve, reject) => {
+      if (!page) return;
 
-  /**
-  * This method is a pie thrown onto the wall in terms of page rendering:
-  * it landed, but is not tidy. Essentially, this method touches the DOM
-  * quite a bit, and should not.
-  *
-  * _TODO_: Ideally, the `TextLayerBuilder` should be a utility that exposes
-  * hooks for building the text layer in components (while mapping the
-  * components to the correct coordinate positions and scales that match
-  * with the rasterized background).
-  *
-  * _TODO_: This is probably the best place to optimize. Frankly, "rendering
-  * a page" really does mean _so much_.
-  *
-  * @private
-  * @method _renderPage
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  _renderPage: function(pageNumber) {
+      var viewport,
+          context,
+          canvas = document.createElement('canvas'),
+          $canvas = $(canvas),
+          $textLayerDiv = this.$('<div>'),
+          $container = $('.pdf-document-container'),
+          $parent = $container.parent();
 
-    return new Promise(function(resolve, reject) {
+      this.$().append($canvas);
+      this.$().append($textLayerDiv);
 
-      var pdf = get(this, 'docObject');
+      viewport = page.getViewport($parent.width() / page.getViewport(1.0).width - 0.01);
+      context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
 
-      if (!pdf) return;
+      page.getTextContent().then((textContent) => {
 
-      // when rendering first time, we want the current viewport width?
-      // when debouncing from window resize, we want the current viewport width?
-      var self=this,
-        viewport,
-        context,
-        $canvas = this.$(),
-        canvas = $canvas.get(0),
-        parentWidth = this.$().parent().width();
+        var canvasOffset = $canvas.offset();
 
-      // Should we just rely upon the caller to tell which page should be rendered?
-      //var pageNumber = get(this,'pageNumber');
-
-      pdf.getPage(pageNumber).then(function(page) {
-
-        viewport = page.getViewport(parentWidth / page.getViewport(1.0).width);
-        context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        page.getTextContent().then(function (textContent) {
-
-          var canvasOffset = $canvas.offset();
-          var $textLayerDiv = self.$("<div />")
-            .addClass("textLayer")
-            .css("height", viewport.height + "px")
-            .css("width", viewport.width + "px")
-            .offset({
-                top: canvasOffset.top,
-                left: canvasOffset.left
-            });
-
-          self.$().after($textLayerDiv);
-
-          var textLayer = new PDFJS.TextLayerBuilder({
-            textLayerDiv: $textLayerDiv.get(0),
-            pageIndex: get(self,'pageNumber')-1,
-            viewport: viewport
+        $textLayerDiv
+          .addClass('textLayer')
+          .css('height', viewport.height + 'px')
+          .css('width', viewport.width + 'px')
+          .offset({
+              top: canvasOffset.top, 
+              left: canvasOffset.left 
           });
 
-          textLayer.setTextContent(textContent);
+        var textLayer = new PDFJS.TextLayerBuilder({
+          textLayerDiv: $textLayerDiv.get(0),
+          pageIndex: get(this, 'page.pageIndex'),
+          viewport: viewport
+        });
 
-          var renderTask = page.render({
-            canvasContext: context,
-            viewport: viewport,
-            textLayer: textLayer
-          });
+        textLayer.setTextContent(textContent);
 
-          renderTask.promise.then(function() {
-            textLayer.render();
-            resolve();
-          });
+        var renderTask = page.render({
+          canvasContext: context,
+          viewport: viewport,
+          textLayer: textLayer
+        });
 
+        renderTask.promise.then(() => {
+          textLayer.render();
+          resolve();
         });
       });
-
-    }.bind(this));
+    });
   }
 
 });
