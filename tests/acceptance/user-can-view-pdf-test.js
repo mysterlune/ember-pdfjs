@@ -1,7 +1,7 @@
-/* globals startApp */
 import { test } from 'qunit';
 import Ember from 'ember';
 import moduleForAcceptance from '../../tests/helpers/module-for-acceptance';
+import startApp from "../../tests/helpers/start-app";
 
 var application;
 
