@@ -1,6 +1,6 @@
 {
   "name": "ember-pdfjs",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A PDFJS Addon for Ember.",
   "directories": {
     "doc": "doc",
