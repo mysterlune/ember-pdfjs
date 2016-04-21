@@ -22,7 +22,7 @@ export default Ember.Component.extend({
   * @property
   * @default null
   */
-  context: null,
+  pdfContext: null,
 
   /**
   * Observer that sets the component height if it changes
@@ -152,7 +152,7 @@ export default Ember.Component.extend({
           textLayerDiv: $textLayerDiv.get(0),
           pageIndex: get(this, 'page.pageIndex'),
           viewport: viewport,
-          context: get(this, 'context')
+          pdfContext: get(this, 'pdfContext')
         });
 
         textLayer.setTextContent(textContent);

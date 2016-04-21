@@ -111,7 +111,7 @@ export default Ember.Component.extend({
   * @property
   * @default null
   */
-  context: null,
+  pdfContext: null,
 
   /**
   * Hook that runs when component initializes
