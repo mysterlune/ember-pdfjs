@@ -17,6 +17,14 @@ export default Ember.Component.extend({
   classNames: ['pdf-page'],
 
   /**
+  * The property storing a generic context object.
+  *
+  * @property
+  * @default null
+  */
+  context: null,
+
+  /**
   * Observer that sets the component height if it changes
   *
   * @method  _setHeight
@@ -37,7 +45,7 @@ export default Ember.Component.extend({
       if (testing) {
         if (get(this, 'page.pageIndex') === 5) {
           this.sendAction('doneScrolling');
-        }      
+        }
       }
     });
   }),
@@ -49,16 +57,16 @@ export default Ember.Component.extend({
   * @return void
   */
   _resizePage: Ember.observer('page.resize', function() {
-    
+
     this.$().html('');
-    
+
     this._setupPage().then(() => {
-      
+
       var height = this.$('canvas').height();
       this.$().height(height);
 
       this.sendAction('setHeight',  this.parentView, height, true);
-      
+
       set(this, 'page.resize', false);
     });
   }),
@@ -77,7 +85,7 @@ export default Ember.Component.extend({
     //   via `authorize`, etc... but for now, we need to set some
     //   parameters to give to the downstream xhr caller
     this._super();
-  },  
+  },
 
   /**
   * Gets called by _changePage and didInsertElement to render and unrender pages
@@ -85,7 +93,7 @@ export default Ember.Component.extend({
   *
   * @method  _setupPage
   * @return void
-  */  
+  */
   _setupPage: function() {
     return new Promise((resolve, reject) => {
       if (get(this, 'page.isActive')) {
@@ -136,14 +144,15 @@ export default Ember.Component.extend({
           .css('height', viewport.height + 'px')
           .css('width', viewport.width + 'px')
           .offset({
-              top: canvasOffset.top, 
-              left: canvasOffset.left 
+              top: canvasOffset.top,
+              left: canvasOffset.left
           });
 
         var textLayer = new PDFJS.TextLayerBuilder({
           textLayerDiv: $textLayerDiv.get(0),
           pageIndex: get(this, 'page.pageIndex'),
-          viewport: viewport
+          viewport: viewport,
+          context: get(this, 'context')
         });
 
         textLayer.setTextContent(textContent);

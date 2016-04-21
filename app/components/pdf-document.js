@@ -1,26 +1,26 @@
 /* globals PDFJS Promise window */
 
 /**
-* This program has 3 basic workflows. 
+* This program has 3 basic workflows.
 *
-* First is the loading of the document and generation of the individual pages. 
-* This happens using methods on the PDFJS global and is a promise chain. It 
+* First is the loading of the document and generation of the individual pages.
+* This happens using methods on the PDFJS global and is a promise chain. It
 * populates the get(this, 'pages') array and renders the initial pages.
 *
-* The second workflow is the sizing of the pages and blank pages. This happens 
-* through communication with pdf-page. pdf-page lets pdf-document know the height 
-* of the first canvas rendered. pdf-document observes this and then sets the 
+* The second workflow is the sizing of the pages and blank pages. This happens
+* through communication with pdf-page. pdf-page lets pdf-document know the height
+* of the first canvas rendered. pdf-document observes this and then sets the
 * height property on all pages. All pdf-pages then resize themselves.
 *
-* The third workflows are the scroll and resize bindings. The addon will only 
-* render 3-5 pages at a time. When the user scrolls new pages will become rendered 
-* and old pages will be removed from the DOM. Resizing the width of the page will 
-* cause the pages to be re-rendered and all the page sizes will change. It also 
-* makes its best effort at snapping the page to what it was before resizing. This 
+* The third workflows are the scroll and resize bindings. The addon will only
+* render 3-5 pages at a time. When the user scrolls new pages will become rendered
+* and old pages will be removed from the DOM. Resizing the width of the page will
+* cause the pages to be re-rendered and all the page sizes will change. It also
+* makes its best effort at snapping the page to what it was before resizing. This
 * can get a little wonky when resizing really small and huge.
 *
-* It also has testing hooks built in that will notify acceptance tests when certain 
-* promises have been resolved. If it finds the #ember-testing-container then it will 
+* It also has testing hooks built in that will notify acceptance tests when certain
+* promises have been resolved. If it finds the #ember-testing-container then it will
 * activate these hooks.
 */
 
@@ -48,7 +48,7 @@ const getDirection = function() {
 
   if (scrollTop > lastScrollTop) {
     direction = 'down';
-  } 
+  }
   else {
     direction = 'up';
   }
@@ -58,7 +58,7 @@ const getDirection = function() {
   return  direction;
 };
 /**
-*  Test hooks so tests know when all the async calls in this component have 
+*  Test hooks so tests know when all the async calls in this component have
 *  been resolved.
 */
 let testing = $('#ember-testing-container').length;
@@ -86,7 +86,7 @@ export default Ember.Component.extend({
   *
   * @property
   * @default
-  */ 
+  */
   classNames: ['pdf-document-container'],
 
   /**
@@ -106,6 +106,14 @@ export default Ember.Component.extend({
   docObject: null,
 
   /**
+  * The property storing a generic context object.
+  *
+  * @property
+  * @default null
+  */
+  context: null,
+
+  /**
   * Hook that runs when component initializes
   *
   * @method  init
@@ -114,7 +122,7 @@ export default Ember.Component.extend({
   init: function() {
     if (testing) {
       set(this, 'componentLoaded', componentLoaded);
-      set(this, 'componentScrolled', componentScrolled);      
+      set(this, 'componentScrolled', componentScrolled);
     }
 
     this._super();
@@ -192,7 +200,7 @@ export default Ember.Component.extend({
         set(page, 'isActive', false);
       }
 
-      return page;        
+      return page;
     });
 
     set(this, 'pages', pages);
@@ -243,7 +251,7 @@ export default Ember.Component.extend({
       }
 
       this._onScroll();
-      
+
       this._getDocument(docInitParams)
         .then(this._receiveDocument.bind(this))
         .then(this._createDocument.bind(this))
@@ -297,11 +305,11 @@ export default Ember.Component.extend({
   */
   _receiveDocument: function(submission) {
     return new Promise((resolve, reject) => {
-      
-      if (!submission) { 
-        reject('No submission'); 
+
+      if (!submission) {
+        reject('No submission');
       }
-      
+
       set(this, 'docObject', submission);
       resolve(submission);
     });
