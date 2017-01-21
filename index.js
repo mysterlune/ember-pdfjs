@@ -60,10 +60,10 @@ module.exports = {
 
     var target = (parentAddon || app);
 
-    target.import(target.bowerDirectory + '/pdfjs-dist/web/pdf_viewer.css');
-    target.import(target.bowerDirectory + '/pdfjs-dist/web/pdf_viewer.js');
     target.import(target.bowerDirectory + '/pdfjs-dist/build/pdf.js');
     target.import(target.bowerDirectory + '/pdfjs-dist/build/pdf.worker.js');
+    target.import(target.bowerDirectory + '/pdfjs-dist/web/pdf_viewer.css');
+    target.import(target.bowerDirectory + '/pdfjs-dist/web/pdf_viewer.js');
 
   }
 }
