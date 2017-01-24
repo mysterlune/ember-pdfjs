@@ -15,7 +15,7 @@ module.exports = {
     var PDFJS = pickFiles('bower_components/pdfjs-dist/build',{
         srcDir: '/',
         files: ['pdf.js','pdf.worker.js'],
-        destDir: '/assets'
+        destDir: '/'
     });
 
     trees.push(PDFJS);
