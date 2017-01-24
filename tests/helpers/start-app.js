@@ -2,9 +2,6 @@ import Ember from 'ember';
 import Application from '../../app';
 import config from '../../config/environment';
 
-// custom test helper
-import './wait-for-promise';
-
 export default function startApp(attrs) {
   let application;
 
