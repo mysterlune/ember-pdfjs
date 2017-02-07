@@ -34,35 +34,18 @@ const {
   computed: { reads }
 } = Ember;
 
-const bind = Ember.run.bind;
 const { Promise } = Ember.RSVP;
 
-const $window = Ember.$(window);
+/* jshint undef: false */
+const {
+  PDFLinkService,
+  PDFViewer
+} = PDFJS;
+/* jshint undef: true */
 
-const getCurrentIndex = function(event, pageHeight) {
-  let target = event && event.currentTarget;
-  let scrollTop = window.pageYOffset || target && target.scrollTop || 0;
-  let currentIndex = Math.round(scrollTop / (pageHeight + 5));
+// Probably will need something like this for window resize, debounce.
+// const $window = Ember.$(window);
 
-  return currentIndex;
-};
-
-let lastScrollTop;
-const getDirection = function() {
-  let scrollTop = window.pageYOffset;
-  let direction;
-
-  if (scrollTop > lastScrollTop) {
-    direction = 'down';
-  }
-  else {
-    direction = 'up';
-  }
-
-  lastScrollTop = scrollTop;
-
-  return  direction;
-};
 
 /**
 *  Test hooks so tests know when all the async calls in this component have
@@ -90,7 +73,19 @@ export default Ember.Component.extend({
 
   pdfJs: Ember.inject.service('pdfjs-lib'),
 
+  // Libs
   pdfLib: reads('pdfJs.PDFJS'),
+
+  // Instance variables
+  loadingTask: undefined,
+  percentLoaded: 0,
+  pdfViewer: undefined,
+  pdfDocument: undefined,
+  pdfLinkService: undefined,
+  pdfHistory: undefined,
+  pdfFindController: undefined,
+  pdfPage: undefined,
+  pdfTotalPages: undefined,
 
   /**
   * The {{template}} needs to be imported and added in here
@@ -118,142 +113,6 @@ export default Ember.Component.extend({
   src: '',
 
   /**
-  * The property storing the document.
-  *
-  * @property
-  * @default null
-  */
-  docObject: null,
-
-  /**
-  * The property storing a generic context object.
-  *
-  * @property
-  * @default null
-  */
-  pdfContext: null,
-
-  /**
-  * Hook that runs when component initializes
-  *
-  * @method  init
-  * @return void
-  */
-  init: function() {
-
-    if (testing) {
-      set(this, 'componentLoaded', componentLoaded);
-      set(this, 'componentScrolled', componentScrolled);
-    }
-
-    this._super();
-  },
-
-  /**
-  * Event Binding
-  * Hook that tears down scroll binding
-  *
-  * @method  willDestroyElement
-  * @return void
-  */
-  willDestroyElement: function() {
-    var $scrollElement = testing ? $('#ember-testing-container') : $window;
-    $scrollElement.off('scroll.' + get(this, 'elementId'));
-    $scrollElement.off('resize.' + get(this, 'elementId'));
-  },
-
-  /**
-  * Event Binding
-  * Binds scroll event on window with .pdf namespace so we don't
-  * unbind other functions that bind on window scroll when we
-  * tear down.
-  *
-  * @method  _onScroll
-  * @return void
-  */
-  _onScroll: function() {
-    var $scrollElement = testing ? $('#ember-testing-container') : $window;
-    $scrollElement.on('scroll.' + get(this, 'elementId'), bind(this, this._whenUserScrolls));
-    $scrollElement.on('resize.' + get(this, 'elementId'), bind(this, this._whenWindowResizes));
-  },
-
-  /**
-  * Event
-  * Runs when the user scrolls and sets 5 pages active at a time as the user
-  * scrolls through the document
-  *
-  * @method _whenUserScrolls
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  _whenUserScrolls: function(event) {
-
-    var currentIndex, direction, lowerPages, upperPages;
-
-    currentIndex = getCurrentIndex(event, get(this, 'pageHeight'));
-
-    // here we are saying that if the user is scrolling upward, then
-    // we will load 5 pages above where the user is scrolling so they
-    // can experience a seemless rendering when scrolling quickly. Vise
-    // versa for scrolling downward.
-    direction = getDirection();
-    switch(direction) {
-      case 'up':
-        lowerPages = 2;
-        upperPages = 5;
-        break;
-      case 'down':
-        lowerPages = 5;
-        upperPages = 2;
-    }
-
-    var pages = get(this, 'pages');
-
-    pages = pages.map((page, index) => {
-      // if this pages index is 5 above or 2 below the currentIndex
-      // then we will set isActive so the pdf-page renders its pdf
-      // content, and will set false if not so pdf-page removes its
-      // pdf content from the DOM
-      if (currentIndex + lowerPages >= index && currentIndex - upperPages <= index) {
-        set(page, 'isActive', true);
-      }
-      else {
-        set(page, 'isActive', false);
-      }
-
-      return page;
-    });
-
-    set(this, 'pages', pages);
-  },
-
-  /**
-  * Event
-  * Runs when the user resizes the browser window.  This will re-render the active
-  * pages and resize all the blank pages
-  *
-  * @method _whenWindowResizes
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  _whenWindowResizes: function() {
-
-    var pageIndex = getCurrentIndex(null, get(this, 'pageHeight'));
-    set(this, 'pageIndex', pageIndex);
-
-    var pages = get(this, 'pages');
-
-    pages = pages.map((page) => {
-      if (get(page, 'isActive')) {
-        set(page, 'resize', true);
-      }
-      return page;
-    });
-
-    set(this, 'pages', pages);
-  },
-
-  /**
   * Runs as a hook in Ember when the element for this component
   * has been applied to the DOM.
   *
@@ -262,28 +121,47 @@ export default Ember.Component.extend({
   */
   didInsertElement: function() {
 
-    Ember.run.scheduleOnce('afterRender', this, () => {
+    let [container] = this.element.getElementsByClassName('pdfViewerContainer');
+    set(this, '_container', container);
 
-      // Move to host app?
-      var token = Ember.$.cookie ? Ember.$.cookie('auth_token') : 'No Cookie!';
-
-      var docInitParams = {
-          url: get(this, 'src'),
-          httpHeaders: { "Authorization": `Basic ${token}` }
-      };
-
-      this._onScroll();
-
-      this._getDocument(docInitParams)
-        .then(this._receiveDocument.bind(this))
-        .then(this._createDocument.bind(this))
-        .then(this._loadPages.bind(this))
-        .catch((error) => {
-          console.log('Catching error in this._getDocument', error);
-          throw new Error(error);
-        });
-
+    let pdfLinkService = new PDFLinkService();
+    set(this, 'pdfLinkService', pdfLinkService);
+    let pdfViewer = new PDFViewer({
+      container,
+      linkService: pdfLinkService
     });
+    set(this, 'pdfViewer', pdfViewer);
+    pdfLinkService.setViewer(pdfViewer);
+
+    // EventBus to the rescue... It's really hard to determine where
+    // the DOM will be prepared in PDFJS's perspective such that code
+    // can set `currentScaleValue`. So using EventBus allows code here
+    // to wait until a PDFJS event fires.
+    // There is no guarantee that this callback will execute in a particular
+    // order with regard to other callbacks that may also be operating on
+    // scale elsewhere in the code... So, last callback wins... Could be buggy.
+    // TODO: Find an consitent means to set the view scale value
+    pdfViewer.eventBus.on('pagesloaded', function(/*evt*/) {
+      // This should probably be some math on scale rather than "page-width"
+      // depending on your viewport and layout needs.
+      pdfViewer.currentScaleValue = 'page-width';
+    });
+
+    // What to do otherwise...? What if there is no `src`...
+    if (get(this, 'src')) {
+      this.send('load');
+    }
+
+
+    // // setup the event listening to synchronise with pdf.js' modifications
+    // let self = this;
+    // pdfViewer.eventBus.on('pagechange', function (evt) {
+    //   let page = evt.pageNumber;
+    //   run(function () {
+    //     self.set('pdfPage', page);
+    //   })
+    // });
+
 
     // TODO: We need a way to hook into the PDFJS library to apply
     //   the same custom treatment as is given to the jqXHR object
@@ -292,176 +170,50 @@ export default Ember.Component.extend({
     this._super(...arguments);
   },
 
-  /**
-  * Promise
-  * Given initialization parameters, try to load the document.
-  *
-  * @private
-  * @method _getDocument
-  @ @for Ember-PDFJS.PdfPage
-  * @return {Promise} Resolves when document is initialized, rejects on fail
-  */
-  _getDocument: function(docInitParams) {
-    return new Promise((resolve, reject) => {
+  actions: {
+    load () {
 
-      get(this, 'pdfLib').getDocument(docInitParams)
-        .then((initializedDocument) => {
-          console.log('Got initialized document', initializedDocument);
-          resolve(initializedDocument);
-        })
-        .catch(function(error) {
-          reject(error);
-        });
+    // Move to host app?
+    // Going to need some form of security for docs that require auth
+    // let token = Ember.$.cookie ? Ember.$.cookie('auth_token') : 'No Cookie!';
+    // let docInitParams = {
+    //     url: get(this, 'src'),
+    //     httpHeaders: { "Authorization": `Basic ${token}` }
+    // };
 
-    });
-  },
+      let uri = get(this, 'src');
+      let loadingTask = get(this, 'pdfLib').getDocument(uri);
 
-  /**
-  * Promise
-  * Once the document has been extracted, etc., this handler provides an
-  * intermediary step to do additional work (send actions, store local props, etc.)
-  *
-  * @private
-  * @method _didReceiveDocument
-  * @for Ember-PDFJS.PdfPage
-  * @return {Promise} Resolves when the document is received and set as a local
-  */
-  _receiveDocument: function(initializedDocument) {
-    return new Promise((resolve, reject) => {
+      loadingTask.onProgress = (progressData) => {
+        let percentLoaded = (100 * progressData.loaded / progressData.total);
+        set(this, 'percentLoaded', percentLoaded);
+      };
 
-      if (!initializedDocument) {
-        reject('No submission');
-      }
-
-      set(this, 'docObject', initializedDocument);
-      resolve(initializedDocument);
-    });
-  },
-
-  /**
-  * Promise
-  * This hook essentially calls for rendering a document. It sets the pages property
-  * to be used in pdf-document.hbs and it also returns the pages via promise resolve
-  *
-  * @private
-  * @method _createDocument
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  _createDocument: function() {
-    return new Promise((resolve/*, reject*/) => {
-
-      var pdf = get(this, 'docObject');
-
-      var numPages = pdf.numPages;
-      var pages = [];
-
-      for (var i = 1; i <= numPages; i++) {
-        pages.push(pdf.getPage(i));
-      }
-
-      Promise.all(pages).then((pages) => {
-        resolve(pages);
-      });
-    });
-  },
-
-
-  /**
-  * Promise
-  * This gets called by a promise chain after _createDocument. This sets the
-  * initial active pages (i.e. the first 3)
-  *
-  * @private
-  * @method _loadPages
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  _loadPages: function(pages) {
-    return new Promise((resolve/*, reject*/) => {
-      // set initial pages to render
-
-      pages = pages.map((page, index) => {
-        if (index < 3) { set(page, 'isActive', true); }
-        return page;
+      loadingTask = loadingTask.then((pdfDocument) => {
+        set(this, 'pdfDocument', pdfDocument);
+        let viewer = get(this, 'pdfViewer');
+        viewer.setDocument(pdfDocument);
+        let linkService = get(this, 'pdfLinkService');
+        linkService.setDocument(pdfDocument);
+        set(this, 'pdfTotalPages', linkService.pagesCount);
+        set(this, 'pdfPage', linkService.page);
       });
 
-      set(this, 'pages', pages);
+      set(this, 'loadingTask', loadingTask);
+      return loadingTask;
+    },
 
-      resolve(pages);
-    });
-  },
-
-  /**
-  * Action Hook
-  * This gets called by this.sendAction in pdf-page and lets pdf-document know when a
-  * new page loads after being scrolled
-  *
-  * @public
-  * @method doneScrolling
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  doneScrolling: function() {
-    if (testing) {
-      finishedScrolling();
+    search (/*query, highlightAll, caseSensitive, phraseSearch*/) {
+      throw 'not implemented yet';
+    },
+    changeSearchResult (/*changeDirection*/) {
+      throw 'not implemented yet';
+    },
+    changePage (/*changePage*/) {
+      throw 'not implemented yet';
+    },
+    zoom () {
+      throw 'not implemented yet';
     }
-  },
-
-  /**
-  * Action Hook
-  * This gets called by this.sendAction in pdf-page and sets the pageHeight property
-  * on pdf-document
-  *
-  * TODO: figure out why this is set wrong inside this function, had to pass that in
-  * because this gets called by this.sendAction inside pdf-page
-  *
-  * @public
-  * @method setHeight
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  setHeight: function(that, height, resize) {
-    set(that, 'pageHeight', height);
-
-    if (resize) {
-      set(that, 'resize', true);
-    }
-  },
-
-  /**
-  * Observer
-  * This gets called when the pdf-document pageHeight property gets set, it then goes and
-  * sets the height property of all pages to the height of the first rendered page to check
-  * in.  It also resolves the componentLoaded promise with finishedLoading() so acceptance
-  * testing knows when the component is done loading.
-  *
-  * @public
-  * @method _setPageHeight
-  * @for Ember-PDFJS.PdfPage
-  * @return void
-  */
-  _setPageHeight: Ember.observer('pageHeight', function() {
-    Ember.run(() => {
-      var pages = get(this, 'pages');
-
-      pages = pages.map((page) => {
-        set(page, 'height', get(this, 'pageHeight'));
-        return page;
-      });
-
-      if (get(this, 'resize')) {
-        var pageIndex = get(this, 'pageIndex');
-        var page = this.$().children()[pageIndex];
-        page.scrollIntoView();
-      }
-
-      set(this, 'pages', pages);
-
-      if (testing) {
-        finishedLoading();
-      }
-    });
-  })
-
+  }
 });
