@@ -82,8 +82,6 @@ export default Ember.Component.extend({
   pdfViewer: undefined,
   pdfDocument: undefined,
   pdfLinkService: undefined,
-  pdfHistory: undefined,
-  pdfFindController: undefined,
   pdfPage: undefined,
   pdfTotalPages: undefined,
 
