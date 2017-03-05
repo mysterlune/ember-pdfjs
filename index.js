@@ -1,6 +1,6 @@
 'use strict';
 
-var pickFiles = require('broccoli-static-compiler');
+var Funnel = require('broccoli-funnel');
 var mergeTrees = require('broccoli-merge-trees');
 
 module.exports = {
@@ -12,25 +12,25 @@ module.exports = {
 
     trees.push(this._super.treeFor.apply(this, arguments));
 
-    var PDFJS = pickFiles('bower_components/pdfjs-dist/build',{
+    var PDFJS = new Funnel('bower_components/pdfjs-dist/build',{
         srcDir: '/',
-        files: ['pdf.js','pdf.worker.js'],
+        include: ['pdf.js','pdf.worker.js'],
         destDir: '/'
     });
 
     trees.push(PDFJS);
 
-    var PDFJSExtras = pickFiles('bower_components/pdfjs-dist/web',{
+    var PDFJSExtras = new Funnel('bower_components/pdfjs-dist/web',{
         srcDir: '/',
-        files: ['compatibility.js'],
+        include: ['compatibility.js'],
         destDir: '/assets'
     });
 
     trees.push(PDFJSExtras)
 
-    var PDFJSCmaps = pickFiles('bower_components/pdfjs-dist/cmaps',{
+    var PDFJSCmaps = new Funnel('bower_components/pdfjs-dist/cmaps',{
         srcDir: '/',
-        files: ['**/*.bcmap'],
+        include: ['**/*.bcmap'],
         destDir: '/assets/web/cmaps'
     });
 
@@ -43,9 +43,9 @@ module.exports = {
     var trees = [];
     trees.push(this._super.treeForPublic.apply(this, arguments));
 
-    var publicFiles = pickFiles(tree, {
+    var publicFiles = new Funnel(tree, {
         srcDir: '/',
-        files: ['test.pdf'],
+        include: ['test.pdf'],
         destDir: '/assets'
     });
 
