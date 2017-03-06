@@ -1,5 +1,10 @@
 # Ember PDFJS Addon
 
+[![Latest NPM release](https://img.shields.io/npm/v/ember-pdfjs.svg)](https://www.npmjs.com/package/ember-pdfjs)
+[![Dependencies](https://david-dm.org/mysterlune/ember-pdfjs.svg)](https://david-dm.org/mysterlune/ember-pdfjs.svg)
+[![Dev Dependencies](https://img.shields.io/david/dev/mysterlune/ember-pdfjs.svg)](https://david-dm.org/mysterlune/ember-pdfjs#info=devDependencies)
+[![Ember Observer Score](http://emberobserver.com/badges/ember-pdfjs.svg)](http://emberobserver.com/addons/ember-pdfjs)
+
 This addon will add [PDFJS](https://mozilla.github.io/pdf.js/) to your `ember-cli` project.
 
 ## Installation
@@ -66,5 +71,5 @@ The Ember Community maintains a fundamental precept of common solutions to commo
 Please contribute!
 
 > We confessed that we're not the only ones trying to climb the same mountain.
-> 
+>
 > -- <cite>[DHH](https://youtu.be/9naDS3r4MbY?t=882), on the character of the Rails Community</cite>
