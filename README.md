@@ -15,12 +15,6 @@ Within your `ember-cli` project:
 
 This will add a `pdf-document` component to your application.
 
-Scrolling causes new pages to render and old pages to expire from the DOM. Only 4 pages will be rendered at any given time. This results in quick load times of very large PDFs.
-
-Each page that renders will first render a `canvas` with the PDF and then render a `$textLayer` div that overlays the `canvas` with selectable text.
-
-Pages unload by doing `this.$().html('');` as they scroll out of view.
-
 ## Standalone Sample
 Though this project is an `addon` type for including a component in your Ember project, you can also kick the tires on the component in a live sample with this project.
 
@@ -30,7 +24,7 @@ cd ember-pdfjs && npm install && bower install
 ember serve
 ````
 
-... and in typical Ember fashion, a development server will fire up on port `--4200`. Then, simply visit:
+... and in typical Ember fashion, a development server will fire up on port `4200`. Then, simply visit:
 
 ````
 http://localhost:4200
@@ -45,10 +39,14 @@ In a template, just do:
 ````
 {{pdf-document src=[model.src]}}
 ````
+
 or
+
 ````
 {{pdf-document src="/path/to/your.pdf"}}
 ````
+
+`[model.src]` can be a `Uint8Array`, as `PDFJS` allows this as a source type for the `...getDocument()` signature.
 
 ### Note on Security
 You will get errors and it will not load if you try to link to something not hosted on your domain. You will need to update `contentSecurityPolicy` in your Ember project accordingly.
