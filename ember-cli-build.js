@@ -4,15 +4,14 @@ var EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
 
 module.exports = function(defaults) {
   var app = new EmberAddon(defaults, {
-    
-    // Add options here
-    
     minifyJS: {
       options: {
         exclude: ["**/pdf.worker.js"]
       }
+    },
+    babel: {
+      ignore: ['pdf.js', 'pdf.worker.js']
     }
-
   });
 
   /*
