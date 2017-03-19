@@ -182,6 +182,10 @@ export default Ember.Component.extend({
       let uri = get(this, 'src');
       let loadingTask = get(this, 'pdfLib').getDocument(uri);
 
+      loadingTask.onPassword = (updateCallback, reason) => {
+          this.sendAction('onPassword', updateCallback, reason);
+      };
+
       loadingTask.onProgress = (progressData) => {
         let percentLoaded = (100 * progressData.loaded / progressData.total);
         set(this, 'percentLoaded', percentLoaded);
