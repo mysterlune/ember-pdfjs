@@ -39,9 +39,22 @@ const { Promise } = Ember.RSVP;
 /* jshint undef: false */
 const {
   PDFLinkService,
-  PDFViewer
+  PDFViewer,
+  PasswordResponses
 } = PDFJS;
 /* jshint undef: true */
+
+/*
+  The following exports the values as of early 2017.
+
+ var PasswordResponses = {
+ NEED_PASSWORD: 1,
+ INCORRECT_PASSWORD: 2
+ };
+
+ */
+
+export { PasswordResponses };
 
 // Probably will need something like this for window resize, debounce.
 // const $window = Ember.$(window);
