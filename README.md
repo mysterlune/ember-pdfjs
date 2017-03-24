@@ -48,6 +48,47 @@ or
 
 `[model.src]` can be a `Uint8Array`, as `PDFJS` allows this as a source type for the `...getDocument()` signature.
 
+### Password Protected PDF Support
+
+The addon also allows for the registration of an Ember action handler for use when a PDF is password protected.  In a template
+you would add an action closure:
+
+````
+{{pdf-document src=[model.src] onPassword=(action 'myPasswordAction')}}
+
+````
+
+The associated action handler would look something like the following:
+
+````
+import { PasswordResponses } from 'ember-pdfjs/components/pdf-document';
+
+export default Ember.Controller.extend({
+    actions: {
+        'myPasswordAction': function(setPassword, reason) {
+            // The reason value provides an indication of first prompt
+            // versus incorrect password prompt
+            let promptText = 'Enter the password to open this PDF file.';
+            if (reason === PasswordResponses.INCORRECT_PASSWORD) {
+                promptText = 'Invalid password. Please try again.';
+            }
+            
+            // Prompt the user for their password in some application-specific way
+            let password = promptUserForPassword(promptText);
+            
+            // Callback with the password received from the prompt
+            setPassword(password);
+        }
+    }
+});
+````
+
+The action receives two parameters:
+ * setPassword - A callback function that is used to set the password received from the user
+ * reason - The "reason" that the password is being requested.  One of:
+   * PasswordResponses.NEED_PASSWORD (First time prompt)
+   * PasswordResponses.INCORRECT_PASSWORD (Re-prompt when previous password was incorrect)
+
 ### Note on Security
 You will get errors and it will not load if you try to link to something not hosted on your domain. You will need to update `contentSecurityPolicy` in your Ember project accordingly.
 
