@@ -65,5 +65,7 @@ module.exports = {
     target.import(target.bowerDirectory + '/pdfjs-dist/web/pdf_viewer.css');
     target.import(target.bowerDirectory + '/pdfjs-dist/web/pdf_viewer.js');
 
+    target.import('vendor/ember-pdfjs.css');
+
   }
 }

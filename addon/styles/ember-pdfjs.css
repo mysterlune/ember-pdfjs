@@ -1,0 +1,14 @@
+.pdfViewerContainer {
+  /*
+     In some cases for testing the addon manually during dev,
+     it's helpful to set some defaults for the viewer in CSS.
+     The `page-width` scale setting will apply to the container,
+     so you can set that value here for testing. Typically, your
+     actual app using this addon will drive the styling.
+     NOTE: This is only to help manual, visual testing of this addon.
+  */
+
+/*  width: 600px;
+  height: 700px;
+  overflow: auto;*/
+}

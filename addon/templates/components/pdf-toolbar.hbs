@@ -1,0 +1,8 @@
+<div class="ember-pdfjs-toolbar">
+  <button type="button" title="-" {{action 'zoomOut'}}>-</button>
+  <button type="button" title="+" {{action 'zoomIn'}}>+</button>
+  {{one-way-input terms update=(action 'searchUpdate')}}
+  {{#if matchCount}}
+  <label>{{matchCount}} matches found</label>
+  {{/if}}
+</div>
