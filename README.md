@@ -3,7 +3,7 @@
 [![Latest NPM release](https://img.shields.io/npm/v/ember-pdfjs.svg)](https://www.npmjs.com/package/ember-pdfjs)
 [![Downloads per month](https://img.shields.io/npm/dm/ember-pdfjs.svg)](https://img.shields.io/npm/dm/ember-pdfjs.svg)
 [![Total downloads](https://img.shields.io/npm/dt/ember-pdfjs.svg)](https://img.shields.io/npm/dt/ember-pdfjs.svg)
-[![Dependencies](https://david-dm.org/mysterlune/ember-pdfjs.svg)](https://david-dm.org/mysterlune/ember-pdfjs.svg)
+[![Dependencies](https://david-dm.org/mysterlune/ember-pdfjs.svg)](https://david-dm.org/mysterlune/ember-pdfjs)
 [![Dev Dependencies](https://img.shields.io/david/dev/mysterlune/ember-pdfjs.svg)](https://david-dm.org/mysterlune/ember-pdfjs?type=dev)
 [![Issues](https://img.shields.io/github/issues/mysterlune/ember-pdfjs.svg)](https://img.shields.io/github/issues/mysterlune/ember-pdfjs.svg)
 [![Issues](https://img.shields.io/github/issues-closed/mysterlune/ember-pdfjs.svg)](https://img.shields.io/github/issues-closed/mysterlune/ember-pdfjs.svg)
