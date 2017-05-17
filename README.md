@@ -4,12 +4,12 @@
 [![Downloads per month](https://img.shields.io/npm/dm/ember-pdfjs.svg)](https://img.shields.io/npm/dm/ember-pdfjs.svg)
 [![Total downloads](https://img.shields.io/npm/dt/ember-pdfjs.svg)](https://img.shields.io/npm/dt/ember-pdfjs.svg)
 [![Dependencies](https://david-dm.org/mysterlune/ember-pdfjs.svg)](https://david-dm.org/mysterlune/ember-pdfjs.svg)
-[![Dev Dependencies](https://img.shields.io/david/dev/mysterlune/ember-pdfjs.svg)](https://david-dm.org/mysterlune/ember-pdfjs#info=devDependencies)
+[![Dev Dependencies](https://img.shields.io/david/dev/mysterlune/ember-pdfjs.svg)](https://david-dm.org/mysterlune/ember-pdfjs?type=dev)
 [![Issues](https://img.shields.io/github/issues/mysterlune/ember-pdfjs.svg)](https://img.shields.io/github/issues/mysterlune/ember-pdfjs.svg)
 [![Issues](https://img.shields.io/github/issues-closed/mysterlune/ember-pdfjs.svg)](https://img.shields.io/github/issues-closed/mysterlune/ember-pdfjs.svg)
 [![Ember Observer Score](http://emberobserver.com/badges/ember-pdfjs.svg)](http://emberobserver.com/addons/ember-pdfjs)
 
-This addon will add [PDFJS](https://mozilla.github.io/pdf.js/) to your `ember-cli` project.
+This addon will provide some useful components for viewing and interacting with PDF documents to your `ember-cli` project. This addon unites the Ember framework ecosystem and the [PDFJS](https://mozilla.github.io/pdf.js/) open source project by Mozilla.
 
 ## Installation
 
